@@ -3,6 +3,7 @@ const express = require("express");
 
 const authRouter = require("./route/authRoute");
 const workersRouter = require("./route/workersRoute");
+const roomRouter = require("./route/roomRoute");
 const catchAsync = require("./utils/catchAsync");
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controller/errorController");
@@ -23,6 +24,8 @@ app.get("/", (req, res) => {
 app.use("/api/v1/auth", authRouter);
 
 app.use("/api/v1/workers", workersRouter);
+
+app.use("/api/v1/rooms", roomRouter);
 
 app.use(
   catchAsync(async (req, res, next) => {
