@@ -19,6 +19,10 @@ const cleaningSessions = sequelize.define("cleaningSession", {
     allowNull: true,
     type: DataTypes.DATE,
   },
+  duration: {
+    type: DataTypes.INTEGER,
+    allowNull: true,
+  },
   workerId: {
     type: DataTypes.UUID,
     allowNull: false,

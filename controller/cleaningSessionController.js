@@ -24,6 +24,11 @@ const handleQrScan = catchAsync(async (req, res, next) => {
   if (activeSession) {
     // zakończ sprzątanie
     activeSession.endTime = new Date();
+    const durationMinutes = Math.round(
+      (activeSession.endTime - activeSession.startTime) / 1000 / 60
+    );
+
+    activeSession.duration = durationMinutes;
     await activeSession.save();
 
     const data = {
@@ -32,6 +37,7 @@ const handleQrScan = catchAsync(async (req, res, next) => {
       roomId: activeSession.roomId,
       startTime: formatWarsawTime(activeSession.startTime),
       endTime: formatWarsawTime(activeSession.endTime),
+      durationMinutes: activeSession.duration,
     };
 
     return res.status(200).json({

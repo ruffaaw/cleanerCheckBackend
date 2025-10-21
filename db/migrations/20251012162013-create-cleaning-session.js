@@ -20,6 +20,10 @@ module.exports = {
         allowNull: true,
         type: Sequelize.DATE,
       },
+      duration: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+      },
       workerId: {
         type: Sequelize.UUID,
         allowNull: false,
