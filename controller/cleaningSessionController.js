@@ -40,6 +40,20 @@ const handleQrScan = catchAsync(async (req, res, next) => {
       data,
     });
   } else {
+    // sprawdzenie czy pracownik nie ma żadnego aktywnego sprzątania w innym pomieszczeniu
+    const existing = await cleaningSessions.findOne({
+      where: { workerId, endTime: null },
+    });
+
+    if (existing && !activeSession) {
+      return next(
+        new AppError(
+          "Najpierw musisz dokończyć pracę w poprzednim pomieszczeniu.",
+          400
+        )
+      );
+    }
+
     // rozpocznij nowe sprzątanie
     const newSession = await cleaningSessions.create({
       workerId,
