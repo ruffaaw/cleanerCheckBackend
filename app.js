@@ -1,5 +1,6 @@
 require("dotenv").config({ path: `${process.cwd()}/.env` });
 const express = require("express");
+const cors = require("cors");
 
 const authRouter = require("./route/authRoute");
 const workersRouter = require("./route/workersRoute");
@@ -10,6 +11,13 @@ const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controller/errorController");
 
 const app = express();
+
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
 
 app.use(express.json());
 
