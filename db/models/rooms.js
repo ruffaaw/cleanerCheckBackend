@@ -1,6 +1,5 @@
 "use strict";
 const { DataTypes } = require("sequelize");
-
 const sequelize = require("../../config/database");
 
 const rooms = sequelize.define("rooms", {
@@ -13,23 +12,21 @@ const rooms = sequelize.define("rooms", {
   name: {
     type: DataTypes.STRING,
     allowNull: false,
-    validate: {
-      notNull: {
-        msg: "name cannot be null",
-      },
-      notEmpty: {
-        msg: "name cannot be empty",
-      },
-    },
   },
   createdAt: {
     allowNull: false,
     type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
   },
   updatedAt: {
     allowNull: false,
     type: DataTypes.DATE,
+    defaultValue: DataTypes.NOW,
   },
 });
+
+rooms.associate = (models) => {
+  rooms.hasMany(models.cleaningSession, { foreignKey: "roomId" });
+};
 
 module.exports = rooms;

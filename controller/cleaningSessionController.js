@@ -1,6 +1,6 @@
+const { cleaningSession } = require("../db/models");
 const { DateTime } = require("luxon");
 const catchAsync = require("../utils/catchAsync");
-const cleaningSessions = require("../db/models/cleaningSession");
 const AppError = require("../utils/appError");
 
 // helper do formatowania dat na strefę Warszawy
@@ -17,7 +17,7 @@ const handleQrScan = catchAsync(async (req, res, next) => {
   if (!workerId || !roomId) return next(new AppError("Brakujące dane!", 400));
 
   // sprawdzamy, czy pracownik już sprząta to pomieszczenie
-  const activeSession = await cleaningSessions.findOne({
+  const activeSession = await cleaningSession.findOne({
     where: { workerId, roomId, endTime: null },
   });
 
@@ -47,7 +47,7 @@ const handleQrScan = catchAsync(async (req, res, next) => {
     });
   } else {
     // sprawdzenie czy pracownik nie ma żadnego aktywnego sprzątania w innym pomieszczeniu
-    const existing = await cleaningSessions.findOne({
+    const existing = await cleaningSession.findOne({
       where: { workerId, endTime: null },
     });
 
@@ -61,7 +61,7 @@ const handleQrScan = catchAsync(async (req, res, next) => {
     }
 
     // rozpocznij nowe sprzątanie
-    const newSession = await cleaningSessions.create({
+    const newSession = await cleaningSession.create({
       workerId,
       roomId,
       startTime: new Date(),

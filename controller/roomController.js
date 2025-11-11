@@ -1,11 +1,12 @@
+const { rooms } = require("../db/models");
 const catchAsync = require("../utils/catchAsync");
-const room = require("../db/models/rooms");
+// const room = require("../db/models/rooms");
 const AppError = require("../utils/appError");
 
 const createRoom = catchAsync(async (req, res, next) => {
   const body = req.body;
 
-  const newRoom = await room.create({ name: body.name });
+  const newRoom = await rooms.create({ name: body.name });
 
   if (!newRoom)
     return next(new AppError("Błąd podczas tworzenia pomieszczenia", 400));
@@ -20,7 +21,7 @@ const createRoom = catchAsync(async (req, res, next) => {
 });
 
 const getAllRoom = catchAsync(async (req, res, next) => {
-  const result = await room.findAll();
+  const result = await rooms.findAll();
 
   return res.status(200).json({
     status: "success",
@@ -30,7 +31,7 @@ const getAllRoom = catchAsync(async (req, res, next) => {
 
 const getRoomById = catchAsync(async (req, res, next) => {
   const roomId = req.params.id;
-  const result = await room.findByPk(roomId);
+  const result = await rooms.findByPk(roomId);
 
   if (!result)
     return next(new AppError("Nie znaleziono pomieszczenia o tym ID", 404));
@@ -45,7 +46,7 @@ const updateRoom = catchAsync(async (req, res, next) => {
   const roomId = req.params.id;
   const body = req.body;
 
-  const result = await room.findByPk(roomId);
+  const result = await rooms.findByPk(roomId);
 
   if (!result)
     return next(new AppError("Nie znaleziono pomieszczenia o tym ID", 404));
@@ -63,7 +64,7 @@ const updateRoom = catchAsync(async (req, res, next) => {
 const deleteRoom = catchAsync(async (req, res, next) => {
   const roomId = req.params.id;
 
-  const result = await room.findByPk(roomId);
+  const result = await rooms.findByPk(roomId);
 
   if (!result)
     return next(new AppError("Nie znaleziono pomieszczenia o tym ID", 404));

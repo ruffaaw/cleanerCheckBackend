@@ -1,6 +1,6 @@
+"use strict";
 const { DataTypes } = require("sequelize");
 const sequelize = require("../../config/database");
-const AppError = require("../../utils/appError");
 
 const cleaningSessions = sequelize.define("cleaningSession", {
   id: {
@@ -10,14 +10,13 @@ const cleaningSessions = sequelize.define("cleaningSession", {
     type: DataTypes.UUID,
   },
   startTime: {
-    defaultValue: DataTypes.NOW,
-    allowNull: false,
     type: DataTypes.DATE,
+    allowNull: false,
+    defaultValue: DataTypes.NOW,
   },
   endTime: {
-    defaultValue: DataTypes.NOW,
-    allowNull: true,
     type: DataTypes.DATE,
+    allowNull: true,
   },
   duration: {
     type: DataTypes.INTEGER,
@@ -26,23 +25,16 @@ const cleaningSessions = sequelize.define("cleaningSession", {
   workerId: {
     type: DataTypes.UUID,
     allowNull: false,
-    references: {
-      model: "workers",
-      key: "id",
-    },
-    onUpdate: "CASCADE",
-    onDelete: "CASCADE",
   },
   roomId: {
     type: DataTypes.UUID,
     allowNull: false,
-    references: {
-      model: "rooms",
-      key: "id",
-    },
-    onUpdate: "CASCADE",
-    onDelete: "CASCADE",
   },
 });
+
+cleaningSessions.associate = (models) => {
+  cleaningSessions.belongsTo(models.workers, { foreignKey: "workerId" });
+  cleaningSessions.belongsTo(models.rooms, { foreignKey: "roomId" });
+};
 
 module.exports = cleaningSessions;

@@ -1,11 +1,12 @@
+const { workers } = require("../db/models");
 const catchAsync = require("../utils/catchAsync");
-const worker = require("../db/models/workers");
+// const worker = require("../db/models/workers");
 const AppError = require("../utils/appError");
 
 const createWorker = catchAsync(async (req, res, next) => {
   const body = req.body;
 
-  const newWorker = await worker.create({
+  const newWorker = await workers.create({
     name: body.name,
   });
 
@@ -22,7 +23,7 @@ const createWorker = catchAsync(async (req, res, next) => {
 });
 
 const getAllWorkers = catchAsync(async (req, res, next) => {
-  const result = await worker.findAll();
+  const result = await workers.findAll();
 
   return res.status(200).json({
     status: "success",
@@ -32,7 +33,7 @@ const getAllWorkers = catchAsync(async (req, res, next) => {
 
 const getWorkerById = catchAsync(async (req, res, next) => {
   const workerId = req.params.id;
-  const result = await worker.findByPk(workerId);
+  const result = await workers.findByPk(workerId);
 
   if (!result) {
     return next(new AppError("Nie znaleziono pracownika o tym ID", 404));
@@ -48,7 +49,7 @@ const updateWorker = catchAsync(async (req, res, next) => {
   const workerId = req.params.id;
   const body = req.body;
 
-  const result = await worker.findByPk(workerId);
+  const result = await workers.findByPk(workerId);
 
   if (!result)
     return next(new AppError("Nie znaleziono pracownika o tym ID", 400));
@@ -66,7 +67,7 @@ const updateWorker = catchAsync(async (req, res, next) => {
 const deleteWorker = catchAsync(async (req, res, next) => {
   const workerId = req.params.id;
 
-  const result = await worker.findByPk(workerId);
+  const result = await workers.findByPk(workerId);
 
   if (!result)
     return next(new AppError("Nie znaleziono pracownika o tym ID", 400));

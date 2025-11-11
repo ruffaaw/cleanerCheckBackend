@@ -6,6 +6,7 @@ const authRouter = require("./route/authRoute");
 const workersRouter = require("./route/workersRoute");
 const roomRouter = require("./route/roomRoute");
 const cleaningSessions = require("./route/cleaningSessionRoute");
+const dashboardRouter = require("./route/dashboardRoute");
 const catchAsync = require("./utils/catchAsync");
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controller/errorController");
@@ -37,6 +38,10 @@ app.use("/api/v1/workers", workersRouter);
 app.use("/api/v1/rooms", roomRouter);
 
 app.use("/api/v1/cleaningSessions", cleaningSessions);
+
+app.use("/api/v1/cleaningSessions", cleaningSessions);
+
+app.use("/api/v1/dashboard", dashboardRouter);
 
 app.use(
   catchAsync(async (req, res, next) => {
