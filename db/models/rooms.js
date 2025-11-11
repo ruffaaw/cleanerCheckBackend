@@ -27,6 +27,10 @@ const rooms = sequelize.define("rooms", {
 
 rooms.associate = (models) => {
   rooms.hasMany(models.cleaningSession, { foreignKey: "roomId" });
+  rooms.hasMany(models.cleaningSession, {
+    foreignKey: "roomId",
+    as: "lastSession",
+  });
 };
 
 module.exports = rooms;
