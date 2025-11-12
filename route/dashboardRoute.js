@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
 const dash = require("../controller/dashboardController");
+const { authentication } = require("../controller/authController");
 
-router.get("/workers", dash.getWorkersDashboard);
-router.get("/workers/:id", dash.getWorkerDetails);
+router.route("/workers").get(authentication, dash.getWorkersDashboard);
+router.route("/workers/:id").get(authentication, dash.getWorkerDetails);
 
-router.get("/rooms", dash.getRoomsDashboard);
-router.get("/rooms/:id", dash.getRoomDetails);
+router.route("/rooms").get(authentication, dash.getRoomsDashboard);
+router.route("/rooms/:id").get(authentication, dash.getRoomDetails);
 
 module.exports = router;

@@ -1,10 +1,11 @@
 const { workers, cleaningSession, rooms } = require("../db/models");
 const { DateTime } = require("luxon");
+const catchAsync = require("../utils/catchAsync");
 
 const formatTime = (date) =>
   date ? DateTime.fromJSDate(date).setZone("Europe/Warsaw").toRelative() : null;
 
-const getWorkersDashboard = async (req, res) => {
+const getWorkersDashboard = catchAsync(async (req, res, next) => {
   const data = await workers.findAll({
     attributes: ["id", "name"],
     include: [
@@ -33,9 +34,9 @@ const getWorkersDashboard = async (req, res) => {
     status: "success",
     data: formatted,
   });
-};
+});
 
-const getWorkerDetails = async (req, res) => {
+const getWorkerDetails = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
   const sessions = await cleaningSession.findAll({
@@ -56,9 +57,9 @@ const getWorkerDetails = async (req, res) => {
     workerId: id,
     history: formatted,
   });
-};
+});
 
-const getRoomsDashboard = async (req, res) => {
+const getRoomsDashboard = catchAsync(async (req, res, next) => {
   const allRooms = await rooms.findAll({
     include: [
       {
@@ -96,9 +97,9 @@ const getRoomsDashboard = async (req, res) => {
   });
 
   res.json({ status: "success", data: formatted });
-};
+});
 
-const getRoomDetails = async (req, res) => {
+const getRoomDetails = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
   const sessions = await cleaningSession.findAll({
@@ -119,7 +120,7 @@ const getRoomDetails = async (req, res) => {
     roomId: id,
     history: formatted,
   });
-};
+});
 
 module.exports = {
   getWorkersDashboard,
