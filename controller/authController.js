@@ -69,14 +69,7 @@ const login = catchAsync(async (req, res, next) => {
 
 const authentication = catchAsync(async (req, res, next) => {
   //1. get the token from headers
-  let idToken = "";
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer")
-  ) {
-    //Bearer fhasdkfjands
-    idToken = req.headers.authorization.split(" ")[1];
-  }
+  const idToken = req.cookies?.token;
 
   if (!idToken) {
     return next(new AppError("please lognin to get access"));
