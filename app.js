@@ -20,24 +20,18 @@ app.use(
   })
 );
 
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
+
 app.use(express.json());
 
-app.get("/", (req, res) => {
-  res.status(200).json({
-    status: "success",
-    message: "Hello, World!",
-  });
-});
-
-//all routes will be here
+//all routes
 
 app.use("/api/v1/auth", authRouter);
 
 app.use("/api/v1/workers", workersRouter);
 
 app.use("/api/v1/rooms", roomRouter);
-
-app.use("/api/v1/cleaningSessions", cleaningSessions);
 
 app.use("/api/v1/cleaningSessions", cleaningSessions);
 
