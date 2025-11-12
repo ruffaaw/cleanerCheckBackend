@@ -39,14 +39,31 @@ const getWorkersDashboard = catchAsync(async (req, res, next) => {
 const getWorkerDetails = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
+  const workerData = await workers.findByPk(id, {
+    attributes: ["id", "name"],
+  });
+
+  if (!workerData) {
+    return next(new AppError("Worker not found", 404));
+  }
+
   const sessions = await cleaningSession.findAll({
     where: { workerId: id },
-    include: [{ model: rooms, attributes: ["name"] }],
+    include: [
+      { model: rooms, attributes: ["name"] },
+      { model: workers, attributes: ["name"] },
+    ],
     order: [["startTime", "DESC"]],
   });
 
+  const activeSession = await cleaningSession.findOne({
+    where: { workerId: id, endTime: null },
+    include: [{ model: rooms, attributes: ["name"] }],
+  });
+
   const formatted = sessions.map((s) => ({
-    room: s.room.name,
+    worker: s.worker?.name || null,
+    room: s.room?.name || null,
     startTime: s.startTime,
     endTime: s.endTime,
     duration: s.duration,
@@ -54,7 +71,10 @@ const getWorkerDetails = catchAsync(async (req, res, next) => {
 
   res.json({
     status: "success",
-    workerId: id,
+    workerId: workerData.id,
+    workerName: workerData.name,
+    isCleaning: !!activeSession,
+    currentRoom: activeSession?.room?.name || null,
     history: formatted,
   });
 });
