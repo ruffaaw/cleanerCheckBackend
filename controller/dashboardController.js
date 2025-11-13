@@ -1,6 +1,7 @@
 const { workers, cleaningSession, rooms } = require("../db/models");
 const { DateTime } = require("luxon");
 const catchAsync = require("../utils/catchAsync");
+const { Op } = require("sequelize");
 
 const formatTime = (date) =>
   date ? DateTime.fromJSDate(date).setZone("Europe/Warsaw").toRelative() : null;
@@ -82,12 +83,14 @@ const getWorkerDetails = catchAsync(async (req, res, next) => {
 const getRoomsDashboard = catchAsync(async (req, res, next) => {
   const allRooms = await rooms.findAll({
     include: [
+      // aktywna sesja sprzątania
       {
         model: cleaningSession,
         required: false,
-        where: { endTime: null }, // aktywne sesje
+        where: { endTime: null },
         include: [{ model: workers, attributes: ["name"] }],
       },
+      // ostatnia ukończona sesja sprzątania
       {
         model: cleaningSession,
         required: false,
@@ -95,24 +98,36 @@ const getRoomsDashboard = catchAsync(async (req, res, next) => {
         limit: 1,
         order: [["endTime", "DESC"]],
         as: "lastSession",
+        where: {
+          endTime: { [Op.ne]: null },
+        },
         include: [{ model: workers, attributes: ["name"] }],
       },
     ],
   });
 
   const formatted = allRooms.map((room) => {
-    const active = room.cleaningSessions[0];
-    const last = room.lastSession[0];
+    const active = room.cleaningSessions?.[0] || null; // aktywna
+    const last = room.lastSession?.[0] || null; // ostatnia ukończona
+
+    const status = active
+      ? "W trakcie"
+      : last
+      ? "Posprzątane"
+      : "Nigdy nie sprzątane";
+
+    const worker = active?.worker?.name || last?.worker?.name || null;
 
     return {
       id: room.id,
       name: room.name,
-      status: active ? "W trakcie" : last ? "Posprzątane" : "Błąd",
-      worker: active?.worker?.name || null,
+      status,
+      worker,
       cleaningSince: active ? formatTime(active.startTime) : null,
-      lastCleaning: last
-        ? `${last.worker.name}, ${formatTime(last.endTime)}`
-        : null,
+      lastCleaning:
+        last && last.endTime
+          ? `${last.worker?.name || "—"}, ${formatTime(last.endTime)}`
+          : null,
     };
   });
 
@@ -128,17 +143,46 @@ const getRoomDetails = catchAsync(async (req, res, next) => {
     order: [["startTime", "DESC"]],
   });
 
-  const formatted = sessions.map((s) => ({
-    worker: s.worker.name,
+  const activeSession = await cleaningSession.findOne({
+    where: { roomId: id, endTime: null },
+    include: [{ model: workers, attributes: ["name"] }],
+  });
+
+  const lastSession = await cleaningSession.findOne({
+    where: { roomId: id, endTime: { [Op.ne]: null } },
+    include: [{ model: workers, attributes: ["name"] }],
+    order: [["endTime", "DESC"]],
+  });
+
+  const formattedHistory = sessions.map((s) => ({
+    worker: s.worker?.name || null,
     startTime: s.startTime,
     endTime: s.endTime,
     duration: s.duration,
   }));
 
+  const status = activeSession
+    ? "W trakcie"
+    : lastSession
+    ? "Posprzątane"
+    : "Nigdy nie sprzątane";
+
+  const cleaningSince = activeSession
+    ? formatTime(activeSession.startTime)
+    : null;
+
+  const lastCleaning =
+    lastSession && lastSession.endTime
+      ? `${lastSession.worker?.name || "—"}, ${formatTime(lastSession.endTime)}`
+      : null;
+
   res.json({
     status: "success",
     roomId: id,
-    history: formatted,
+    currentStatus: status,
+    cleaningSince,
+    lastCleaning,
+    history: formattedHistory,
   });
 });
 
