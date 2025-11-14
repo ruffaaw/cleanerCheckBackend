@@ -40,6 +40,34 @@ const getWorkersDashboard = catchAsync(async (req, res, next) => {
 const getWorkerDetails = catchAsync(async (req, res, next) => {
   const { id } = req.params;
 
+  const page = Number(req.query.page) || 1;
+  const limit = Number(req.query.limit) || 20;
+  const offset = (page - 1) * limit;
+
+  const search = req.query.search || "";
+  const startDate = req.query.startDate || null;
+  const endDate = req.query.endDate || null;
+
+  const sortBy = req.query.sortBy || "startTime";
+  const sortOrder = req.query.sortOrder === "ASC" ? "ASC" : "DESC";
+
+  let order = [];
+
+  switch (sortBy) {
+    case "name":
+      order = [[{ model: rooms }, "name", sortOrder]];
+      break;
+
+    case "endTime":
+      order = [["endTime", sortOrder]];
+      break;
+
+    case "startTime":
+    default:
+      order = [["startTime", sortOrder]];
+      break;
+  }
+
   const workerData = await workers.findByPk(id, {
     attributes: ["id", "name"],
   });
@@ -48,14 +76,50 @@ const getWorkerDetails = catchAsync(async (req, res, next) => {
     return next(new AppError("Worker not found", 404));
   }
 
-  const sessions = await cleaningSession.findAll({
-    where: { workerId: id },
-    include: [
-      { model: rooms, attributes: ["name"] },
-      { model: workers, attributes: ["name"] },
-    ],
-    order: [["startTime", "DESC"]],
-  });
+  let start = startDate ? new Date(startDate) : null;
+  let end = endDate ? new Date(endDate) : null;
+
+  if (start) {
+    start.setHours(0, 0, 0, 0);
+  }
+  if (end) {
+    end.setHours(23, 59, 59, 999);
+  }
+
+  const where = { workerId: id };
+
+  if (start && end) {
+    where.startTime = { [Op.between]: [start, end] };
+  } else if (start) {
+    where.startTime = { [Op.gte]: start };
+  } else if (end) {
+    where.startTime = { [Op.lte]: end };
+  }
+
+  const include = [
+    {
+      model: rooms,
+      attributes: ["name"],
+      where: search
+        ? {
+            name: { [Op.like]: `%${search}%` },
+          }
+        : undefined,
+    },
+    {
+      model: workers,
+      attributes: ["name"],
+    },
+  ];
+
+  const { rows: sessions, count: total } =
+    await cleaningSession.findAndCountAll({
+      where,
+      include,
+      order,
+      limit,
+      offset,
+    });
 
   const activeSession = await cleaningSession.findOne({
     where: { workerId: id, endTime: null },
@@ -77,6 +141,12 @@ const getWorkerDetails = catchAsync(async (req, res, next) => {
     isCleaning: !!activeSession,
     currentRoom: activeSession?.room?.name || null,
     history: formatted,
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages: Math.ceil(total / limit),
+    },
   });
 });
 
