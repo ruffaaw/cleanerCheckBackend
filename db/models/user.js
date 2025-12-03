@@ -68,6 +68,10 @@ const user = sequelize.define(
         }
       },
     },
+    resetPassword: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
     createdAt: {
       allowNull: false,
       type: DataTypes.DATE,
