@@ -64,6 +64,7 @@ const login = catchAsync(async (req, res, next) => {
   return res.json({
     status: "success",
     token,
+    resetPassword: result.resetPassword,
   });
 });
 
@@ -129,4 +130,51 @@ const whoAmI = catchAsync(async (req, res, next) => {
   });
 });
 
-module.exports = { signup, login, authentication, restrictTo, logout, whoAmI };
+const changePassword = catchAsync(async (req, res, next) => {
+  const { newPassword, confirmPassword } = req.body;
+  const userId = req.user.id;
+  const found = await user.findByPk(userId);
+
+  if (!found.resetPassword)
+    return next(new AppError("Password change not required", 400));
+
+  found.password = newPassword;
+  found.confirmPassword = confirmPassword;
+  found.resetPassword = false;
+
+  await found.save();
+
+  return res.json({
+    status: "success",
+    message: "Hasło zostało zmienione",
+  });
+});
+
+const forcePasswordReset = catchAsync(async (req, res, next) => {
+  const { userId } = req.params;
+  const { newPassword, confirmPassword } = req.body;
+
+  const found = await user.findByPk(userId);
+  if (!found) return next(new AppError("User not found", 404));
+
+  found.password = newPassword;
+  found.confirmPassword = confirmPassword;
+  found.resetPassword = true;
+  await found.save();
+
+  res.json({
+    status: "success",
+    message: "Password reset forced",
+  });
+});
+
+module.exports = {
+  signup,
+  login,
+  authentication,
+  restrictTo,
+  logout,
+  whoAmI,
+  changePassword,
+  forcePasswordReset,
+};
