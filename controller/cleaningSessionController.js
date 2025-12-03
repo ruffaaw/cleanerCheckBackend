@@ -1,4 +1,4 @@
-const { cleaningSession } = require("../db/models");
+const { cleaningSession, workers, rooms } = require("../db/models");
 const { DateTime } = require("luxon");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
@@ -42,7 +42,7 @@ const handleQrScan = catchAsync(async (req, res, next) => {
 
     return res.status(200).json({
       status: "success",
-      message: "cleaning finished",
+      message: "Zakończono sprzątanie",
       data,
     });
   } else {
@@ -75,12 +75,63 @@ const handleQrScan = catchAsync(async (req, res, next) => {
       startTime: formatWarsawTime(newSession.startTime),
     };
 
-    return res.status(201).json({
+    return res.status(200).json({
       status: "success",
-      message: "cleaning started",
+      message: "Rozpoczęto sprzątanie",
       data,
     });
   }
 });
 
-module.exports = { handleQrScan };
+const createManualSession = catchAsync(async (req, res, next) => {
+  const { workerId, roomId, startTime, endTime } = req.body;
+
+  // Sprawdzenie czy wszystkie dane są
+  if (!workerId || !roomId || !startTime || !endTime) {
+    return next(new AppError("", 400));
+  }
+
+  const start = new Date(startTime);
+  const end = new Date(endTime);
+
+  if (isNaN(start) || isNaN(end)) {
+    return next(new AppError("", 400));
+  }
+
+  if (start >= end) {
+    return next(new AppError("", 400));
+  }
+
+  // Sprawdzenie czy worker istnieje
+  const worker = await workers.findByPk(workerId);
+  if (!worker) {
+    return next(new AppError("", 404));
+  }
+
+  // Sprawdzenie czy room istnieje
+  const room = await rooms.findByPk(roomId);
+  if (!room) {
+    return next(new AppError("", 404));
+  }
+
+  // Obliczenie duration (w minutach)
+  const durationMs = end - start;
+  const durationMinutes = Math.floor(durationMs / 1000 / 60);
+
+  // Utworzenie sesji
+  const session = await cleaningSession.create({
+    workerId,
+    roomId,
+    startTime: start,
+    endTime: end,
+    duration: durationMinutes,
+  });
+
+  res.status(201).json({
+    status: "success",
+    message: "Session created manually",
+    data: session,
+  });
+});
+
+module.exports = { handleQrScan, createManualSession };
