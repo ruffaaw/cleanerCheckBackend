@@ -7,6 +7,7 @@ const workersRouter = require("./route/workersRoute");
 const roomRouter = require("./route/roomRoute");
 const cleaningSessions = require("./route/cleaningSessionRoute");
 const dashboardRouter = require("./route/dashboardRoute");
+const notificationRouter = require("./route/notificationRoute");
 const catchAsync = require("./utils/catchAsync");
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controller/errorController");
@@ -36,6 +37,8 @@ app.use("/api/v1/rooms", roomRouter);
 app.use("/api/v1/cleaningSessions", cleaningSessions);
 
 app.use("/api/v1/dashboard", dashboardRouter);
+
+app.use("/api/v1/notifications", notificationRouter);
 
 app.use(
   catchAsync(async (req, res, next) => {
