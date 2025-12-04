@@ -1,4 +1,5 @@
 require("dotenv").config({ path: `${process.cwd()}/.env` });
+require("./cron/checkRooms");
 const express = require("express");
 const cors = require("cors");
 
