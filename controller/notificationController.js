@@ -1,6 +1,14 @@
 const { notifications } = require("../db/models");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
+const { DateTime } = require("luxon");
+
+const formatWarsawTime = (date) =>
+  date
+    ? DateTime.fromJSDate(new Date(date))
+        .setZone("Europe/Warsaw")
+        .toFormat("dd-MM-yyyy HH:mm:ss")
+    : null;
 
 const createNotification = catchAsync(async (req, res, next) => {
   const body = req.body;
@@ -20,24 +28,34 @@ const createNotification = catchAsync(async (req, res, next) => {
 });
 
 const getAllNotifications = catchAsync(async (req, res, next) => {
-  const result = await notifications.findAll();
+  const result = await notifications.findAll({ order: [["date", "DESC"]] });
+
+  const formatted = result.map((n) => ({
+    ...n.toJSON(),
+    date: formatWarsawTime(n.date),
+  }));
 
   return res.status(200).json({
     status: "success",
-    data: result,
+    data: formatted,
   });
 });
 
 const getAllUserNotifications = catchAsync(async (req, res, next) => {
   const userId = req.user.id;
-  const result = await notifications.findAll({ where: { userId } });
+  const result = await notifications.findAll({
+    where: { userId },
+    order: [["date", "DESC"]],
+  });
 
-  const unreadCount = result.filter((n) => !n.isRead).length;
+  const formatted = result.map((n) => ({
+    ...n.toJSON(),
+    date: formatWarsawTime(n.date),
+  }));
 
   return res.status(200).json({
     status: "success",
-    unreadCount,
-    data: result,
+    data: formatted,
   });
 });
 
@@ -46,11 +64,17 @@ const getUnreadNotifications = catchAsync(async (req, res, next) => {
 
   const result = await notifications.findAll({
     where: { userId, isRead: false },
+    order: [["date", "DESC"]],
   });
+
+  const formatted = result.map((n) => ({
+    ...n.toJSON(),
+    date: formatWarsawTime(n.date),
+  }));
 
   return res.status(200).json({
     status: "success",
-    data: result,
+    data: formatted,
   });
 });
 
@@ -59,11 +83,17 @@ const getReadNotifications = catchAsync(async (req, res, next) => {
 
   const result = await notifications.findAll({
     where: { userId, isRead: true },
+    order: [["date", "DESC"]],
   });
+
+  const formatted = result.map((n) => ({
+    ...n.toJSON(),
+    date: formatWarsawTime(n.date),
+  }));
 
   return res.status(200).json({
     status: "success",
-    data: result,
+    data: formatted,
   });
 });
 
