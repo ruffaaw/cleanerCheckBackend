@@ -3,8 +3,8 @@ const { rooms, cleaningSession, notifications, user } = require("../db/models");
 const { Op } = require("sequelize");
 const { DateTime } = require("luxon");
 
-// cron uruchamiany co 5 minut
-cron.schedule("*/5 * * * *", async () => {
+// cron uruchamiany co 10 minut
+cron.schedule("*/10 * * * *", async () => {
   console.log("CRON: sprawdzam pomieszczenia...");
 
   try {
