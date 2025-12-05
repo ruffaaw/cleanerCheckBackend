@@ -84,54 +84,52 @@ const handleQrScan = catchAsync(async (req, res, next) => {
 });
 
 const createManualSession = catchAsync(async (req, res, next) => {
-  const { workerId, roomId, startTime, endTime } = req.body;
+  const { workerId, roomId, date } = req.body;
 
-  // Sprawdzenie czy wszystkie dane są
-  if (!workerId || !roomId || !startTime || !endTime) {
-    return next(new AppError("", 400));
-  }
-
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-
-  if (isNaN(start) || isNaN(end)) {
-    return next(new AppError("", 400));
-  }
-
-  if (start >= end) {
-    return next(new AppError("", 400));
-  }
-
-  // Sprawdzenie czy worker istnieje
-  const worker = await workers.findByPk(workerId);
-  if (!worker) {
-    return next(new AppError("", 404));
-  }
-
-  // Sprawdzenie czy room istnieje
-  const room = await rooms.findByPk(roomId);
-  if (!room) {
-    return next(new AppError("", 404));
-  }
-
-  // Obliczenie duration (w minutach)
-  const durationMs = end - start;
-  const durationMinutes = Math.floor(durationMs / 1000 / 60);
-
-  // Utworzenie sesji
-  const session = await cleaningSession.create({
-    workerId,
-    roomId,
-    startTime: start,
-    endTime: end,
-    duration: durationMinutes,
+  const activeSession = await cleaningSession.findOne({
+    where: { workerId, roomId, endTime: null },
   });
 
-  res.status(201).json({
-    status: "success",
-    message: "Session created manually",
-    data: session,
-  });
+  if (activeSession) {
+    activeSession.endTime = date;
+
+    const durationMinutes = Math.round(
+      (activeSession.endTime - activeSession.startTime) / 1000 / 60
+    );
+
+    activeSession.duration = durationMinutes;
+    await activeSession.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Zakończono sprzątanie",
+    });
+  } else {
+    const existing = await cleaningSession.findOne({
+      where: { workerId, endTime: null },
+    });
+
+    if (existing && !activeSession) {
+      return next(
+        new AppError(
+          "Najpierw musisz dokończyć pracę w poprzednim pomieszczeniu.",
+          400
+        )
+      );
+    }
+
+    const newSession = await cleaningSession.create({
+      workerId,
+      roomId,
+      startTime: date,
+      endTime: null,
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Rozpoczęto sprzątanie",
+    });
+  }
 });
 
 module.exports = { handleQrScan, createManualSession };
