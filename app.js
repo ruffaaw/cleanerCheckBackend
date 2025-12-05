@@ -1,5 +1,7 @@
 require("dotenv").config({ path: `${process.cwd()}/.env` });
 require("./cron/checkRooms");
+require("./cron/cleanupOldSessions");
+require("./cron/cleanupOldNotifications");
 const express = require("express");
 const cors = require("cors");
 
