@@ -17,7 +17,6 @@ const sendErrorProd = (error, res) => {
   const statusCode = error.statusCode || 500;
   const status = error.status || "error";
   const message = error.message;
-  const stack = error.stack;
 
   if (error.isOperational) {
     return res.status(statusCode).json({
@@ -25,8 +24,6 @@ const sendErrorProd = (error, res) => {
       message,
     });
   }
-
-  console.log(error.name, error.message, stack);
 
   return res.status(500).json({
     status: "error",
