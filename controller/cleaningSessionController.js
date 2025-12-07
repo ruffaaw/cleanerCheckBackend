@@ -2,6 +2,7 @@ const { cleaningSession, workers, rooms } = require("../db/models");
 const { DateTime } = require("luxon");
 const catchAsync = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
+const { validate } = require("uuid");
 
 // helper do formatowania dat na strefę Warszawy
 const formatWarsawTime = (date) =>
@@ -14,7 +15,16 @@ const formatWarsawTime = (date) =>
 const handleQrScan = catchAsync(async (req, res, next) => {
   const { workerId, roomId } = req.body;
 
+  if (!validate(workerId) || !validate(roomId))
+    return next(new AppError("Nieprawidłowe dane", 400));
+
   if (!workerId || !roomId) return next(new AppError("Brakujące dane!", 400));
+
+  if (!(await workers.findByPk(workerId)))
+    return next(new AppError("Nie ma takiego pracownika", 404));
+
+  if (!(await rooms.findByPk(roomId)))
+    return next(new AppError("Nie ma takiego pomieszczenia", 404));
 
   // sprawdzamy, czy pracownik już sprząta to pomieszczenie
   const activeSession = await cleaningSession.findOne({
@@ -85,6 +95,15 @@ const handleQrScan = catchAsync(async (req, res, next) => {
 
 const createManualSession = catchAsync(async (req, res, next) => {
   const { workerId, roomId, date } = req.body;
+
+  if (!validate(workerId) || !validate(roomId))
+    return next(new AppError("Nieprawidłowe dane", 400));
+
+  if (!(await workers.findByPk(workerId)))
+    return next(new AppError("Nie ma takiego pracownika", 404));
+
+  if (!(await rooms.findByPk(roomId)))
+    return next(new AppError("Nie ma takiego pomieszczenia", 404));
 
   const activeSession = await cleaningSession.findOne({
     where: { workerId, roomId, endTime: null },
