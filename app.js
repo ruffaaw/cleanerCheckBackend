@@ -14,6 +14,7 @@ const notificationRouter = require("./route/notificationRoute");
 const catchAsync = require("./utils/catchAsync");
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controller/errorController");
+const requestLogger = require("./middleware/requestLogger");
 
 const app = express();
 
@@ -30,6 +31,8 @@ app.use(cookieParser());
 app.use(express.json());
 
 //all routes
+
+app.use(requestLogger);
 
 app.use("/api/v1/auth", authRouter);
 
