@@ -6,6 +6,8 @@ RUN npm install
 
 COPY . .
 
+RUN chmod +x docker-entrypoint.sh
+
 EXPOSE 4444
 
-CMD ["npm", "run", "start:dev"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
