@@ -44,7 +44,7 @@ const getWorkersDashboard = catchAsync(async (req, res, next) => {
     attributes: ["id", "name"],
     where: search
       ? {
-          name: { [Op.like]: `%${search}%` },
+          name: { [Op.iLike]: `%${search}%` },
         }
       : undefined,
     include: [
@@ -149,7 +149,7 @@ const getWorkerDetails = catchAsync(async (req, res, next) => {
       attributes: ["name"],
       where: search
         ? {
-            name: { [Op.like]: `%${search}%` },
+            name: { [Op.iLike]: `%${search}%` },
           }
         : undefined,
     },
@@ -211,7 +211,7 @@ const getRoomsDashboard = catchAsync(async (req, res, next) => {
   const sortOrder = req.query.sortOrder === "ASC" ? "ASC" : "DESC";
 
   const allRooms = await rooms.findAll({
-    where: search ? { name: { [Op.like]: `%${search}%` } } : undefined,
+    where: search ? { name: { [Op.iLike]: `%${search}%` } } : undefined,
     include: [
       // aktywna sesja sprzątania
       {
@@ -380,7 +380,7 @@ const getRoomDetails = catchAsync(async (req, res, next) => {
         {
           model: workers,
           attributes: ["name"],
-          where: search ? { name: { [Op.like]: `%${search}%` } } : undefined,
+          where: search ? { name: { [Op.iLike]: `%${search}%` } } : undefined,
         },
       ],
       order,
