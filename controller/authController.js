@@ -68,6 +68,52 @@ const login = catchAsync(async (req, res, next) => {
   });
 });
 
+const getAllUsers = catchAsync(async (req, res, next) => {
+  const users = await user.findAll({
+    attributes: { exclude: ["password"] },
+  });
+
+  return res.status(200).json({
+    status: "success",
+    data: users,
+  });
+});
+
+const updateUser = catchAsync(async (req, res, next) => {
+  const { userId } = req.params;
+  const body = req.body;
+
+  const foundUser = await user.findByPk(userId);
+  if (!foundUser) {
+    return next(new AppError("User not found", 404));
+  }
+  foundUser.name = body.name || foundUser.name;
+
+  const updatedUser = await foundUser.save();
+
+  return res.status(200).json({
+    status: "success",
+    data: updatedUser,
+  });
+});
+
+const deleteUser = catchAsync(async (req, res, next) => {
+  const { userId } = req.params;
+
+  const foundUser = await user.findByPk(userId);
+
+  if (!foundUser) {
+    return next(new AppError("User not found", 404));
+  }
+
+  await foundUser.destroy();
+
+  return res.status(200).json({
+    status: "success",
+    message: "User deleted successfully",
+  });
+});
+
 const authentication = catchAsync(async (req, res, next) => {
   //1. get the token from headers
   const idToken = req.cookies?.token;
@@ -177,4 +223,7 @@ module.exports = {
   whoAmI,
   changePassword,
   forcePasswordReset,
+  getAllUsers,
+  updateUser,
+  deleteUser,
 };
