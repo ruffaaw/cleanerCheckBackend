@@ -70,7 +70,7 @@ const user = sequelize.define(
     },
     resetPassword: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false,
+      defaultValue: true,
     },
     createdAt: {
       allowNull: false,
