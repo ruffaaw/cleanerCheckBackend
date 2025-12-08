@@ -8,7 +8,7 @@ cron.schedule("*/10 * * * *", async () => {
   console.log("CRON: sprawdzam pomieszczenia...");
 
   try {
-    const oneHourAgo = DateTime.now().minus({ hours: 1 }).toJSDate();
+    const oneHourAgo = DateTime.now().minus({ minute: 45 }).toJSDate();
 
     // pobieramy wszystkie pomieszczenia
     const allRooms = await rooms.findAll();
