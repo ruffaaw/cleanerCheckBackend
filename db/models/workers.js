@@ -17,6 +17,11 @@ const workers = sequelize.define("workers", {
       notEmpty: { msg: "name cannot be empty" },
     },
   },
+  workerType: {
+    type: DataTypes.ENUM("0", "1"),
+    allowNull: false,
+    defaultValue: "0",
+  },
   createdAt: {
     allowNull: false,
     type: DataTypes.DATE,
