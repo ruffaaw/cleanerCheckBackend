@@ -8,6 +8,7 @@ const createWorker = catchAsync(async (req, res, next) => {
 
   const newWorker = await workers.create({
     name: body.name,
+    workerType: body.workerType,
   });
 
   if (!newWorker)
@@ -54,7 +55,8 @@ const updateWorker = catchAsync(async (req, res, next) => {
   if (!result)
     return next(new AppError("Nie znaleziono pracownika o tym ID", 400));
 
-  result.name = body.name;
+  !!body.name ? (result.name = body.name) : result.name;
+  !!body.workerType ? (result.workerType = body.workerType) : result.workerType;
 
   const updateWorker = await result.save();
 
