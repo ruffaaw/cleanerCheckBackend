@@ -13,6 +13,10 @@ const rooms = sequelize.define("rooms", {
     type: DataTypes.STRING,
     allowNull: false,
   },
+  checkIntervalMinutes: {
+    type: DataTypes.INTEGER,
+    defaultValue: 60,
+  },
   createdAt: {
     allowNull: false,
     type: DataTypes.DATE,

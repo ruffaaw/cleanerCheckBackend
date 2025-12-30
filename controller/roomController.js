@@ -51,7 +51,10 @@ const updateRoom = catchAsync(async (req, res, next) => {
   if (!result)
     return next(new AppError("Nie znaleziono pomieszczenia o tym ID", 404));
 
-  result.name = body.name;
+  !!body.name ? (result.name = body.name) : result.name;
+  !!body.checkIntervalMinutes
+    ? (result.checkIntervalMinutes = body.checkIntervalMinutes)
+    : result.checkIntervalMinutes;
 
   const updateRoom = await result.save();
 
