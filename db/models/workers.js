@@ -18,7 +18,7 @@ const workers = sequelize.define("workers", {
     },
   },
   workerType: {
-    type: DataTypes.ENUM("0", "1"),
+    type: DataTypes.ENUM("0", "1", "2"),
     allowNull: false,
     defaultValue: "0",
   },
