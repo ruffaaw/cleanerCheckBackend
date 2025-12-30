@@ -20,8 +20,10 @@ const handleQrScan = catchAsync(async (req, res, next) => {
 
   if (!workerId || !roomId) return next(new AppError("Brakujące dane!", 400));
 
-  if (!(await workers.findByPk(workerId)))
-    return next(new AppError("Nie ma takiego pracownika", 404));
+  const worker = await workers.findByPk(workerId);
+  if (!worker) return next(new AppError("Nie ma takiego pracownika", 404));
+
+  const workerType = worker.workerType;
 
   if (!(await rooms.findByPk(roomId)))
     return next(new AppError("Nie ma takiego pomieszczenia", 404));
@@ -41,6 +43,12 @@ const handleQrScan = catchAsync(async (req, res, next) => {
     activeSession.duration = durationMinutes;
     await activeSession.save();
 
+    const messages = {
+      0: "Zakończono sprzątanie",
+      1: "Zakończono serwis",
+      2: "Zakończono kontrolę",
+    };
+
     const data = {
       id: activeSession.id,
       workerId: activeSession.workerId,
@@ -52,7 +60,7 @@ const handleQrScan = catchAsync(async (req, res, next) => {
 
     return res.status(200).json({
       status: "success",
-      message: "Zakończono sprzątanie",
+      message: messages[workerType] || "Zakończono pracę",
       data,
     });
   } else {
@@ -85,9 +93,15 @@ const handleQrScan = catchAsync(async (req, res, next) => {
       startTime: formatWarsawTime(newSession.startTime),
     };
 
+    const messages = {
+      0: "Rozpoczęto sprzątanie",
+      1: "Rozpoczęto serwis",
+      2: "Rozpoczęto kontrolę",
+    };
+
     return res.status(200).json({
       status: "success",
-      message: "Rozpoczęto sprzątanie",
+      message: messages[workerType] || "Rozpoczęto pracę",
       data,
     });
   }
