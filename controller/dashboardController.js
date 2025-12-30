@@ -278,7 +278,7 @@ const getRoomsDashboard = catchAsync(async (req, res, next) => {
     } else if (last) {
       status = finishedStatusByType[workerType] || "Ukończone";
     } else {
-      status = "Nigdy nie wykonywane";
+      status = "Brak aktywności";
     }
 
     const worker = active?.worker?.name || last?.worker?.name || null;
@@ -461,7 +461,7 @@ const getRoomDetails = catchAsync(async (req, res, next) => {
   } else if (lastSession) {
     status = finishedStatusByType[workerType] || "Ukończone";
   } else {
-    status = "Nigdy nie sprzątane";
+    status = "Brak aktywności";
   }
 
   const cleaningSince = activeSession
