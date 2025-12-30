@@ -4,7 +4,7 @@
 module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.addColumn("workers", "workerType", {
-      type: Sequelize.ENUM("0", "1"),
+      type: Sequelize.ENUM("0", "1", "2"),
     });
   },
 
