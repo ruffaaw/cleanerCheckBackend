@@ -2,6 +2,7 @@ const { workers, cleaningSession, rooms } = require("../db/models");
 const { DateTime } = require("luxon");
 const catchAsync = require("../utils/catchAsync");
 const { Op } = require("sequelize");
+const { activeStatusByType, finishedStatusByType } = require("../utils/status");
 
 const formatTime = (date) =>
   date ? DateTime.fromJSDate(date).setZone("Europe/Warsaw").toRelative() : null;
@@ -41,7 +42,7 @@ const getWorkersDashboard = catchAsync(async (req, res, next) => {
 
   // Pobieramy listę pracowników
   const { rows: workersList, count: total } = await workers.findAndCountAll({
-    attributes: ["id", "name"],
+    attributes: ["id", "name", "workerType"],
     where: search
       ? {
           name: { [Op.iLike]: `%${search}%` },
@@ -65,12 +66,27 @@ const getWorkersDashboard = catchAsync(async (req, res, next) => {
     order,
   });
 
-  const formatted = workersList.map((worker) => ({
-    id: worker.id,
-    name: worker.name,
-    isCleaning: worker.cleaningSessions.length > 0,
-    currentRoom: worker.cleaningSessions[0]?.room?.name || null,
-  }));
+  const formatted = workersList.map((worker) => {
+    const activeSession = worker.cleaningSessions?.[0] || null;
+    const workerType = worker.workerType;
+
+    let status;
+
+    if (activeSession) {
+      status = activeStatusByType[workerType] || "W trakcie pracy";
+    } else {
+      status = finishedStatusByType[workerType] || "Dostępny";
+    }
+
+    return {
+      id: worker.id,
+      name: worker.name,
+      workerType,
+      status,
+      isActive: !!activeSession,
+      currentRoom: activeSession?.room?.name || null,
+    };
+  });
 
   res.json({
     status: "success",
@@ -116,7 +132,7 @@ const getWorkerDetails = catchAsync(async (req, res, next) => {
   }
 
   const workerData = await workers.findByPk(id, {
-    attributes: ["id", "name"],
+    attributes: ["id", "name", "workerType"],
   });
 
   if (!workerData) {
@@ -168,10 +184,20 @@ const getWorkerDetails = catchAsync(async (req, res, next) => {
       offset,
     });
 
+  const workerType = workerData.workerType;
+
+  let status;
+
   const activeSession = await cleaningSession.findOne({
     where: { workerId: id, endTime: null },
     include: [{ model: rooms, attributes: ["name"] }],
   });
+
+  if (activeSession) {
+    status = activeStatusByType[workerType] || "W trakcie pracy";
+  } else {
+    status = finishedStatusByType[workerType] || "Dostępny";
+  }
 
   const formatted = sessions.map((s) => ({
     worker: s.worker?.name || null,
@@ -185,8 +211,9 @@ const getWorkerDetails = catchAsync(async (req, res, next) => {
     status: "success",
     workerId: workerData.id,
     workerName: workerData.name,
-    isCleaning: !!activeSession,
+    isActive: !!activeSession,
     currentRoom: activeSession?.room?.name || null,
+    status,
     history: formatted,
     pagination: {
       page,
@@ -218,7 +245,7 @@ const getRoomsDashboard = catchAsync(async (req, res, next) => {
         model: cleaningSession,
         required: false,
         where: { endTime: null },
-        include: [{ model: workers, attributes: ["name"] }],
+        include: [{ model: workers, attributes: ["name", "workerType"] }],
       },
       // ostatnia ukończona sesja sprzątania
       {
@@ -231,21 +258,28 @@ const getRoomsDashboard = catchAsync(async (req, res, next) => {
         where: {
           endTime: { [Op.ne]: null },
         },
-        include: [{ model: workers, attributes: ["name"] }],
+        include: [{ model: workers, attributes: ["name", "workerType"] }],
       },
     ],
   });
 
   // FORMATOWANIE
   let formatted = allRooms.map((room) => {
-    const active = room.cleaningSessions?.[0] || null; // aktywna
-    const last = room.lastSession?.[0] || null; // ostatnia ukończona
+    const active = room.cleaningSessions?.[0] || null;
+    const last = room.lastSession?.[0] || null;
 
-    const status = active
-      ? "W trakcie"
-      : last
-      ? "Posprzątane"
-      : "Nigdy nie sprzątane";
+    const workerType =
+      active?.worker?.workerType ?? last?.worker?.workerType ?? null;
+
+    let status;
+
+    if (active) {
+      status = activeStatusByType[workerType] || "W trakcie";
+    } else if (last) {
+      status = finishedStatusByType[workerType] || "Ukończone";
+    } else {
+      status = "Nigdy nie wykonywane";
+    }
 
     const worker = active?.worker?.name || last?.worker?.name || null;
 
@@ -253,7 +287,9 @@ const getRoomsDashboard = catchAsync(async (req, res, next) => {
       id: room.id,
       name: room.name,
       status,
+      isActive: !!active,
       worker,
+      workerType,
       cleaningSince: active ? formatTime(active.startTime) : null,
       lastCleaning: last?.endTime ? new Date(last.endTime) : null,
       lastCleaningText:
@@ -379,7 +415,7 @@ const getRoomDetails = catchAsync(async (req, res, next) => {
       include: [
         {
           model: workers,
-          attributes: ["name"],
+          attributes: ["name", "workerType"],
           where: search ? { name: { [Op.iLike]: `%${search}%` } } : undefined,
         },
       ],
@@ -391,7 +427,7 @@ const getRoomDetails = catchAsync(async (req, res, next) => {
   // AKTYWNA SESJA
   const activeSession = await cleaningSession.findOne({
     where: { roomId: id, endTime: null },
-    include: [{ model: workers, attributes: ["name"] }],
+    include: [{ model: workers, attributes: ["name", "workerType"] }],
   });
 
   // OSTATNIA UKOŃCZONA SESJA
@@ -400,7 +436,7 @@ const getRoomDetails = catchAsync(async (req, res, next) => {
       roomId: id,
       endTime: { [Op.ne]: null },
     },
-    include: [{ model: workers, attributes: ["name"] }],
+    include: [{ model: workers, attributes: ["name", "workerType"] }],
     order: [["endTime", "DESC"]],
   });
 
@@ -413,11 +449,20 @@ const getRoomDetails = catchAsync(async (req, res, next) => {
   }));
 
   // STATUS
-  const status = activeSession
-    ? "W trakcie"
-    : lastSession
-    ? "Posprzątane"
-    : "Nigdy nie sprzątane";
+  const workerType =
+    activeSession?.worker?.workerType ??
+    lastSession?.worker?.workerType ??
+    null;
+
+  let status;
+
+  if (activeSession) {
+    status = activeStatusByType[workerType] || "W trakcie";
+  } else if (lastSession) {
+    status = finishedStatusByType[workerType] || "Ukończone";
+  } else {
+    status = "Nigdy nie sprzątane";
+  }
 
   const cleaningSince = activeSession
     ? formatTime(activeSession.startTime)
@@ -431,7 +476,8 @@ const getRoomDetails = catchAsync(async (req, res, next) => {
   res.json({
     status: "success",
     roomId: id,
-    currentStatus: status,
+    status,
+    isActive: !!activeSession,
     cleaningSince,
     lastCleaning,
     history: formattedHistory,
